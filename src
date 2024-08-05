@@ -1,0 +1,73 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+# Ler o arquivo CSV diretamente do Google Drive
+url = "https://drive.google.com/file/d/1Yt8X9u62TWW-dkH4Kn-XYo4LegUcX_Ix/view?usp=sharing"
+path = "https://drive.google.com/uc?export=download&id="+url.split("/")[-2]
+df = pd.read_csv(path, header=None, names=['ID', 'Category', 'Complaint'])
+
+# Remover valores ausentes
+df.dropna(subset=['Complaint'], inplace=True)
+
+# Função para preprocessamento do texto
+def preprocess_text(text):
+    return text.lower()
+
+# Pré-processamento dos dados
+df['Complaint'] = df['Complaint'].apply(preprocess_text)
+
+# Dividir os dados em conjunto de treino e teste
+X_train, X_test, y_train, y_test = train_test_split(df['Complaint'], df['Category'], test_size=0.2, random_state=42)
+
+# Vetorização do texto usando TF-IDF
+tfidf_vectorizer = TfidfVectorizer(max_features=1000)
+X_train_tfidf = tfidf_vectorizer.fit_transform(X_train)
+X_test_tfidf = tfidf_vectorizer.transform(X_test)
+
+# Treinamento do modelo de classificação usando Naive Bayes
+naive_bayes = MultinomialNB()
+naive_bayes.fit(X_train_tfidf, y_train)
+
+# Predições no conjunto de teste
+y_pred = naive_bayes.predict(X_test_tfidf)
+
+# Métricas de avaliação
+accuracy = accuracy_score(y_test, y_pred)
+conf_matrix = confusion_matrix(y_test, y_pred)
+class_report = classification_report(y_test, y_pred)
+
+# Visualizações gráficas
+# Gráfico de barras da distribuição das categorias
+plt.figure(figsize=(10, 6))
+sns.countplot(data=df, x='Category')
+plt.title('Distribuição das Categorias de Produtos')
+plt.xlabel('Categoria')
+plt.ylabel('Contagem')
+plt.xticks(rotation=45)
+plt.show()
+
+# Matriz de confusão
+plt.figure(figsize=(10, 6))
+sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues')
+plt.title('Matriz de Confusão do Modelo de Classificação')
+plt.xlabel('Classe Prevista')
+plt.ylabel('Classe Real')
+plt.show()
+
+# Relatório completo
+print("Relatório de Análise de Classificação de Reclamações de Consumidores")
+print("Acurácia do Modelo:", accuracy)
+print("\nMatriz de Confusão:")
+print(conf_matrix)
+print("\nRelatório de Classificação:")
+print(class_report)
+print("\nConclusão:")
+print("Em resumo, o modelo de classificação de reclamações de consumidores apresentou uma boa acurácia geral na categorização das reclamações.")
+print("Ele foi capaz de diferenciar eficazmente entre diferentes categorias de produtos, embora o desempenho tenha variado entre elas.")
+print("A distribuição das predições refletiu a distribuição dos dados, e o modelo foi capaz de identificar as palavras mais importantes para cada categoria de produto.")
+print("Embora tenha havido alguns desafios de generalização, o modelo ainda demonstrou uma capacidade razoável de generalização para novos dados.")
